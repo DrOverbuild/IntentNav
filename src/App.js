@@ -11,7 +11,7 @@ import {Button, StyleSheet, Text, View} from 'react-native';
 import {enableScreens} from 'react-native-screens';
 import {createNativeStackNavigator} from 'react-native-screens/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
-import {addIntentListener} from './Intent';
+import Intent, {addIntentListener} from './Intent';
 import * as RootNavigation from './RootNavigation';
 
 enableScreens();
@@ -40,18 +40,25 @@ const Screen1 = ({navigation}) => {
 
 const App = () => {
   useEffect(() => {
-    const listener = addIntentListener(event => {
-      console.log(event);
-      if (event.action === 'android.intent.action.SEND') {
-        if (event.text) {
+    const handleIntent = intent => {
+      console.log(intent);
+      if (intent.action === 'android.intent.action.SEND') {
+        if (intent.text) {
           RootNavigation.popToTop();
-          RootNavigation.push('Details', {text: event.text});
-        } else if (event.fileContents) {
+          RootNavigation.push('Details', {text: intent.text});
+        } else if (intent.fileContents) {
           RootNavigation.popToTop();
-          RootNavigation.push('Details', {text: event.fileContents});
+          RootNavigation.push('Details', {text: intent.fileContents});
         }
       }
-    });
+    };
+    Intent.getIntentData()
+      .catch(e => {
+        console.log(e);
+      })
+      .then(handleIntent);
+
+    const listener = addIntentListener(handleIntent);
 
     return () => {
       listener.remove();

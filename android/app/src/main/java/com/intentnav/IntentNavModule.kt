@@ -10,7 +10,7 @@ import java.lang.StringBuilder
 
 class IntentNavModule(reactContext: ReactApplicationContext?) : ReactContextBaseJavaModule(reactContext) {
   init {
-    reactContext?.addActivityEventListener(IntentNavActivityEventListener(reactContext))
+    reactContext?.addActivityEventListener(IntentNavActivityEventListener(reactContext, this))
   }
 
   override fun getName(): String {
@@ -19,32 +19,21 @@ class IntentNavModule(reactContext: ReactApplicationContext?) : ReactContextBase
 
   @ReactMethod
   public fun getIntentData(promise: Promise) {
-    if (currentActivity == null) return;
+    if (currentActivity == null) {
+      promise.reject("code", "currentActivity is null!")
+      return
+    }
     val intent = currentActivity!!.intent
     if (intent == null) {
-      promise.resolve(null)
+      promise.reject("code", "intent is null!")
       return
     }
 
-    val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
-
-    if (uri == null) {
-      promise.resolve(null);
-      return;
-    }
-
-    promise.resolve(uri.path)
-  }
-}
-
-class IntentNavActivityEventListener(var context: ReactApplicationContext) : ActivityEventListener {
-
-  override fun onActivityResult(activity: Activity?, requestCode: Int, resultCode: Int, data: Intent?) {
-    println("NOOP on Activity Result")
+    val map = buildWritableMapFromIntent(intent)
+    promise.resolve(map)
   }
 
-  override fun onNewIntent(intent: Intent?) {
-    println("New intent! ${intent?.action}")
+  fun buildWritableMapFromIntent(intent: Intent?): WritableMap {
     val map = Arguments.createMap();
     val action = intent?.action
     if (action == null) {
@@ -56,7 +45,6 @@ class IntentNavActivityEventListener(var context: ReactApplicationContext) : Act
     map.putString("uri", intent?.toUri(0))
 
     if (intent?.type == "text/plain") {
-      val stringVal = intent.getStringExtra(Intent.EXTRA_TEXT)
       map.putString("text", intent.getStringExtra(Intent.EXTRA_TEXT))
     } else if (intent?.type?.startsWith("application") == true) {
       val uriStream = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
@@ -65,15 +53,14 @@ class IntentNavActivityEventListener(var context: ReactApplicationContext) : Act
       }
     }
 
-    context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-      .emit("onNewIntent", map)
+    return map;
   }
 
   private fun loadFileContents(uri: Uri?): String? {
     if (uri == null) return null
-    if (context.currentActivity == null) return null
+    if (currentActivity == null) return null
 
-    val inputStream = context.currentActivity!!.contentResolver.openInputStream(uri) ?: return null;
+    val inputStream = currentActivity!!.contentResolver.openInputStream(uri) ?: return null;
     val strBuilder = StringBuilder();
     var byte: Int = 0
     while (true) {
@@ -85,5 +72,21 @@ class IntentNavActivityEventListener(var context: ReactApplicationContext) : Act
       }
     }
     return strBuilder.toString()
+  }
+}
+
+class IntentNavActivityEventListener(var context: ReactApplicationContext, var module: IntentNavModule) : ActivityEventListener {
+
+  override fun onActivityResult(activity: Activity?, requestCode: Int, resultCode: Int, data: Intent?) {
+    println("NOOP on Activity Result")
+  }
+
+  override fun onNewIntent(intent: Intent?) {
+    println("New intent! ${intent?.action}")
+
+    val map = module.buildWritableMapFromIntent(intent)
+
+    context.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+      .emit("onNewIntent", map)
   }
 }
