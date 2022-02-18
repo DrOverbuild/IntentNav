@@ -10,6 +10,7 @@ import java.lang.StringBuilder
 
 class IntentNavModule(reactContext: ReactApplicationContext?) : ReactContextBaseJavaModule(reactContext) {
   init {
+    // register activity event lister that will trigger an 'onNewIntent' event in javascript
     reactContext?.addActivityEventListener(IntentNavActivityEventListener(reactContext, this))
   }
 
@@ -17,6 +18,7 @@ class IntentNavModule(reactContext: ReactApplicationContext?) : ReactContextBase
     return "IntentNavModule"
   }
 
+  // call this method when the app component mounts
   @ReactMethod
   public fun getIntentData(promise: Promise) {
     if (currentActivity == null) {
@@ -35,18 +37,14 @@ class IntentNavModule(reactContext: ReactApplicationContext?) : ReactContextBase
 
   fun buildWritableMapFromIntent(intent: Intent?): WritableMap {
     val map = Arguments.createMap();
-    val action = intent?.action
-    if (action == null) {
-      map.putNull("action")
-    } else {
-      map.putString("action", action)
-    }
-
+    map.putString("action", intent?.action)
     map.putString("uri", intent?.toUri(0))
 
     if (intent?.type == "text/plain") {
+      // get string extra
       map.putString("text", intent.getStringExtra(Intent.EXTRA_TEXT))
     } else if (intent?.type?.startsWith("application") == true) {
+      // try to pull byte data from file as ascii text
       val uriStream = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
       if (uriStream != null) {
         map.putString("fileContents", loadFileContents(uriStream))
@@ -56,6 +54,7 @@ class IntentNavModule(reactContext: ReactApplicationContext?) : ReactContextBase
     return map;
   }
 
+  // tries to load the uri as a file and converts the stream of bytes to ascii characters and returns that as a string
   private fun loadFileContents(uri: Uri?): String? {
     if (uri == null) return null
     if (currentActivity == null) return null
@@ -78,7 +77,7 @@ class IntentNavModule(reactContext: ReactApplicationContext?) : ReactContextBase
 class IntentNavActivityEventListener(var context: ReactApplicationContext, var module: IntentNavModule) : ActivityEventListener {
 
   override fun onActivityResult(activity: Activity?, requestCode: Int, resultCode: Int, data: Intent?) {
-    println("NOOP on Activity Result")
+    // no-op
   }
 
   override fun onNewIntent(intent: Intent?) {

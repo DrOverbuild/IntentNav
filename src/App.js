@@ -42,6 +42,7 @@ const App = () => {
   useEffect(() => {
     const handleIntent = intent => {
       console.log(intent);
+      // navigate to details if the intent's action is SEND
       if (intent.action === 'android.intent.action.SEND') {
         if (intent.text) {
           RootNavigation.popToTop();
@@ -52,14 +53,18 @@ const App = () => {
         }
       }
     };
+
+    // check for intent on app launch
     Intent.getIntentData()
       .catch(e => {
         console.log(e);
       })
       .then(handleIntent);
 
+    // also add a listener on component mount if the user sends data to the app while the app is already open
     const listener = addIntentListener(handleIntent);
 
+    // remove the listener on component unmount
     return () => {
       listener.remove();
     };
