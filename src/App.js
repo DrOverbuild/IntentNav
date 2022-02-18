@@ -11,7 +11,7 @@ import {Button, StyleSheet, Text, View} from 'react-native';
 import {enableScreens} from 'react-native-screens';
 import {createNativeStackNavigator} from 'react-native-screens/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
-import Intent from './Intent';
+import {addIntentListener} from './Intent';
 import * as RootNavigation from './RootNavigation';
 
 enableScreens();
@@ -40,7 +40,7 @@ const Screen1 = ({navigation}) => {
 
 const App = () => {
   useEffect(() => {
-    const remove = Intent.addListener(event => {
+    const listener = addIntentListener(event => {
       console.log(event);
       if (event.action === 'android.intent.action.SEND') {
         if (event.text) {
@@ -54,7 +54,7 @@ const App = () => {
     });
 
     return () => {
-      remove();
+      listener.remove();
     };
   }, []);
 

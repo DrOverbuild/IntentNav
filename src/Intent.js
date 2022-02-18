@@ -2,11 +2,10 @@ import {NativeEventEmitter, NativeModules} from 'react-native';
 
 const module = NativeModules.IntentNavModule;
 
-const addListener = eventHandler => {
-  const emitter = new NativeEventEmitter(module);
-  const listener = emitter.addListener('onNewIntent', eventHandler);
-  return listener.remove;
+const emitter = new NativeEventEmitter(module);
+
+export const addIntentListener = listener => {
+  return emitter.addListener('onNewIntent', listener);
 };
 
-module.addListener = addListener;
 export default module;
