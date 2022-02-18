@@ -15,14 +15,4 @@ public class MainActivity extends ReactActivity {
   protected String getMainComponentName() {
     return "IntentNav";
   }
-
-  @Override
-  public void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    if (intent == null){
-      return;
-    }
-
-    this.setIntent(intent);
-  }
 }
