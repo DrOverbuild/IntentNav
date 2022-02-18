@@ -7,19 +7,20 @@
  */
 
 import React, {useEffect} from 'react';
-import {AppState, Button, StyleSheet, Text, View} from 'react-native';
+import {Button, StyleSheet, Text, View} from 'react-native';
 import {enableScreens} from 'react-native-screens';
 import {createNativeStackNavigator} from 'react-native-screens/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
 import Intent from './Intent';
+import * as RootNavigation from './RootNavigation';
 
 enableScreens();
 const Stack = createNativeStackNavigator();
 
-const Screen2 = ({navigation}) => {
+const Screen2 = ({route}) => {
   return (
     <View style={styles.container}>
-      <Text>Details</Text>
+      <Text>{route?.params?.text ?? 'No data from intent!'}</Text>
     </View>
   );
 };
@@ -39,26 +40,26 @@ const Screen1 = ({navigation}) => {
 
 const App = () => {
   useEffect(() => {
-    let state = {prev: null};
-    const handleAppState = newState => {
-      if (newState === 'active' && state.prev !== 'active') {
-        Intent.getIntentData().then(str => {
-          console.log(str);
-        });
+    const remove = Intent.addListener(event => {
+      console.log(event);
+      if (event.action === 'android.intent.action.SEND') {
+        if (event.text) {
+          RootNavigation.popToTop();
+          RootNavigation.push('Details', {text: event.text});
+        } else if (event.fileContents) {
+          RootNavigation.popToTop();
+          RootNavigation.push('Details', {text: event.fileContents});
+        }
       }
-      console.log({prev: state.prev, newState});
-      state.prev = newState;
-    };
-
-    AppState.addEventListener('change', handleAppState);
+    });
 
     return () => {
-      AppState.removeEventListener('change', handleAppState);
+      remove();
     };
   }, []);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={RootNavigation.navigationRef}>
       <Stack.Navigator>
         <Stack.Screen name="Home" component={Screen1} />
         <Stack.Screen name="Details" component={Screen2} />

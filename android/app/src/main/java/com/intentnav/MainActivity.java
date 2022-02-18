@@ -3,6 +3,7 @@ package com.intentnav;
 import android.content.Intent;
 
 import com.facebook.react.ReactActivity;
+import com.facebook.react.ReactActivityDelegate;
 
 public class MainActivity extends ReactActivity {
 
